@@ -1,0 +1,17 @@
+FROM alpine
+MAINTAINER Joseph Meade <josephmeade@protonmail.com>
+
+# Install openvpn
+RUN apk --no-cache --no-progress upgrade && \
+    apk --no-cache --no-progress add bash curl ip6tables iptables openvpn \
+                shadow && \
+    addgroup -S vpn && \
+    rm -rf /tmp/*
+
+RUN echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
+
+HEALTHCHECK --interval=60s --timeout=15s --start-period=120s \
+             CMD curl -L 'https://api.ipify.org'
+
+VOLUME [ "/vpn/config" ]
+ENTRYPOINT ["/vpn/config/entrypoint.sh"]

@@ -1,0 +1,103 @@
+version: '2.0'
+
+services:
+  outboard-1:
+    build:
+      context: .
+      dockerfile: Dockerfiles/Dockerfile_outboard
+    # cap_add, security_opt, and volume required for the image to function
+    cap_add:
+      - net_admin
+    environment:
+      TZ: 'EST5EDT'
+    networks:
+      out-1:
+        ipv4_address: 172.16.106.254
+    read_only: true
+    tmpfs:
+      - /run
+      - /tmp
+    restart: unless-stopped
+    security_opt:
+      - label:disable
+    stdin_open: true
+    tty: true
+    volumes:
+      - /dev/net:/dev/net:z
+      - ./outboard-1:/vpn/config
+
+  outboard-2:
+    build:
+      context: .
+      dockerfile: Dockerfiles/Dockerfile_outboard
+    # cap_add, security_opt, and volume required for the image to function
+    cap_add:
+      - net_admin
+    environment:
+      TZ: 'EST5EDT'
+    networks:
+      out-2:
+        ipv4_address: 172.16.107.254
+    read_only: true
+    tmpfs:
+      - /run
+      - /tmp
+    restart: unless-stopped
+    security_opt:
+      - label:disable
+    stdin_open: true
+    tty: true
+    volumes:
+      - /dev/net:/dev/net:z
+      - ./outboard-2:/vpn/config
+
+  master:
+    build:
+      context: .
+      dockerfile: Dockerfiles/Dockerfile_master
+    # cap_add, security_opt, and volume required for the image to function
+    cap_add:
+      - net_admin
+    environment:
+      TZ: 'EST5EDT'
+    networks:
+      in:
+        ipv4_address: 172.16.105.3
+      out-1:
+        ipv4_address: 172.16.106.3
+      out-2:
+        ipv4_address: 172.16.107.3
+        #read_only: true
+    tmpfs:
+      - /run
+      - /tmp
+    restart: unless-stopped
+    security_opt:
+      - label:disable
+    stdin_open: true
+    tty: true
+    privileged: true
+    ports:
+      - "1194:1194/tcp"
+    #  - "53:53/tcp"
+    #   entrypoint: ["sh"]
+    volumes:
+      - /dev/net:/dev/net:z
+      - ./master:/vpn/config
+      - ./master/dnsmasq.d/:/etc/dnsmasq.d
+
+networks:
+  in:
+    ipam:
+      config:
+        - subnet: 172.16.105.0/24
+          gateway: 172.16.105.1
+  out-1:
+    ipam:
+      config:
+        - subnet: 172.16.106.0/24
+
+  out-2:
+    ipam:
+      config:
+        - subnet: 172.16.107.0/24
